@@ -1,0 +1,27 @@
+#pragma once
+class Matrix
+{
+private:
+	int a, b;
+public:
+	double** mat;
+	//double mat[305][305];
+	Matrix();
+	Matrix(int, int);
+	Matrix(double[], int);
+	Matrix(double**, int, int);
+	Matrix(const Matrix&);
+	double* operator[](int);
+	Matrix operator+ (Matrix&) const;
+	Matrix operator+ (double) const;
+	Matrix operator- (Matrix&) const;
+	Matrix operator- (double) const;
+	Matrix operator* (Matrix&) const;
+	Matrix operator* (double) const;
+	Matrix trans();
+	Matrix cut(int, int) ;
+	static Matrix Rand(int, int);
+	void print();
+	~Matrix();
+};
+
