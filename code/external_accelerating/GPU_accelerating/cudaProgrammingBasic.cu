@@ -1,5 +1,17 @@
 #include <stdio.h>
 #include <time.h>
+//Using thrust HPC libarary to High Level Programming
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/generate.h>
+#include <thrust/sort.h>
+#include <thrust/copy.h>
+#include <algorithm>
+#include <cstdlib>
+
+#define THREADNUM 4
+#define BLOCKNUM 2
+#define LENGTH 16
 __global__ void kernel(float *arr)
 {
 	arr[threadIdx.x] = arr[threadIdx.x] + threadIdx.x;
@@ -27,6 +39,32 @@ __global__ void reduce(int *a, int *b)
 	if( tid == 0){
 		b[tid] = sData[tid];
 	}
+}
+
+__global__ void dot_production(int *a, int *b, int *r)
+{
+	int tid = threadIdx.x;
+	int bid = blockIdx.x;
+	int totalId = tid + bid * blockDim.x;
+	int period  = BLOCKNUM * THREADNUM
+	__shared__ int sData[THREADNUM];
+	sData[tid] = 0;
+	while(totalId < LENGTH){
+		sData[tid] += a[totalId] * b[totalId];
+		totalId += period;
+	}
+	__syncthreads();
+
+	//reduce
+	for(int i = THREADNUM/2; i>0; i/=2){
+		if(tid < i) sData[tid] = sData[tid] + sData[tid+i];
+		__syncthreads();
+	}
+
+	if(tid == 0){
+		r[bid] = sData[0];
+	}
+
 }
 
 void cpuSum(int *a, int *b){
@@ -93,43 +131,78 @@ int main(int argc, char **argv)
 
 
 	// Reduce运算
-	const int num = 16;
-	int a[num];
-	int b[1];
-	int *aGpu;
-	int *bGpu;
-	for(int i = 0 ; i < num; i++){
+	// const int num = 16;
+	// int a[num];
+	// int b[1];
+	// int *aGpu;
+	// int *bGpu;
+	// for(int i = 0 ; i < num; i++){
+	// 	a[i] = i * (i+1);
+	// }
+	// cudaMalloc((void**)&aGpu,num*sizeof(int));
+	// cudaMalloc((void**)&bGpu, 1*sizeof(int));
+	// cudaMemcpy(aGpu, a, num*sizeof(int), cudaMemcpyHostToDevice);
+
+	// //do
+	// reduce<<<1,num>>>(aGpu,bGpu);
+	// cudaMemcpy(b, bGpu, sizeof(int), cudaMemcpyDeviceToHost);
+	// printf("sum = %d\n",b[0]);
+
+	// //comparing performance of GPU and CPU
+	// // run 10000 times to calculate the total time
+	// clock_t startTime,endTime;
+	// startTime = clock();
+	// for(int i = 0; i < 1000000; i++){
+	// 	reduce<<<1,num>>>(aGpu,bGpu);
+	// }
+	// endTime = clock();
+	// printf("1000000 times on GPU need: %.3f seconds\n",
+	// 	(double)(endTime-startTime)/CLOCKS_PER_SEC);
+
+	// // cpu case
+	// startTime = clock();
+	// for(int i = 0; i < 1000000; i++){
+	// 	cpuSum(a,b);
+	// }
+	// endTime = clock();
+	// printf("1000000 times on CPU need: %.3f seconds\n",
+	// 	(double)(endTime-startTime)/CLOCKS_PER_SEC);
+	// cudaFree(aGpu);
+	// cudaFree(bGpu);
+
+	//create data on host
+	// thrust::host_vector<int> h_vec(20);
+	// thrust::generate(h_vec.begin(),h_vec.end(),rand);
+	// for(int i = 0; i < h_vec.size();i++)
+	// {
+	// 	printf("h[%d] = %d\t",i,h_vec[i]);
+	// }
+	// printf("\n");
+	// //transfer host data to device
+	// thrust::device_vector<int> d_vec = h_vec;
+
+	// //sort on GPU
+	// thrust::sort(d_vec.begin(),d_vec.end());
+
+	// // transfer back to host
+	// thrust::copy(d_vec.begin(),d_vec.end(),h_vec.begin());
+	// for(int i = 0; i < h_vec.size();i++)
+	// {
+	// 	printf("h[%d] = %d\t",i,h_vec[i]);
+	// }
+	// printf("\n");
+
+	// different BLOCK how to cooperate
+	int a[LENGTH],b[LENGTH];
+	for(int i = 0; i < LENGTH; i++){
 		a[i] = i * (i+1);
+		b[i] = i * (i-2);
 	}
-	cudaMalloc((void**)&aGpu,num*sizeof(int));
-	cudaMalloc((void**)&bGpu, 1*sizeof(int));
-	cudaMemcpy(aGpu, a, num*sizeof(int), cudaMemcpyHostToDevice);
+	int *aGPU, *bGpu;
+	cudaMalloc((void**)&aGpu, sizeof(int) * LENGTH);
+	cudaMemcpy(aGpu, a, sizeof(int) * LENGTH, cudaMemcpyHostToDevice);
+	cudaMalloc((void**)&bGpu, sizeof(int) * LENGTH);
+	cudaMemcpy(bGpu, b, sizeof(int) * LENGTH, cudaMemcpyHostToDevice);
 
-	//do
-	reduce<<<1,num>>>(aGpu,bGpu);
-	cudaMemcpy(b, bGpu, sizeof(int), cudaMemcpyDeviceToHost);
-	printf("sum = %d\n",b[0]);
-
-	//comparing performance of GPU and CPU
-	// run 10000 times to calculate the total time
-	clock_t startTime,endTime;
-	startTime = clock();
-	for(int i = 0; i < 1000000; i++){
-		reduce<<<1,num>>>(aGpu,bGpu);
-	}
-	endTime = clock();
-	printf("1000000 times on GPU need: %.3f seconds\n",
-		(double)(endTime-startTime)/CLOCKS_PER_SEC);
-
-	// cpu case
-	startTime = clock();
-	for(int i = 0; i < 1000000; i++){
-		cpuSum(a,b);
-	}
-	endTime = clock();
-	printf("1000000 times on CPU need: %.3f seconds\n",
-		(double)(endTime-startTime)/CLOCKS_PER_SEC);
-	cudaFree(aGpu);
-	cudaFree(bGpu);
 	return 0;
 }
