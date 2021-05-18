@@ -13,6 +13,7 @@ void TSP::Init(int _dim, Matrix _map)
 
 double TSP::solve(Matrix var)
 {
+	/*
 	var = var.cut(1, dim);
 	struct Node
 	{
@@ -40,6 +41,19 @@ double TSP::solve(Matrix var)
 		res += map[path[i]][path[(i + 1) % dim]];
 	}
 	delete[] node;
+	delete[] path;
+	*/
+	int* path = new int[dim];
+	double res = 0; int index = 0;
+	for (int i = 0; i < var.b; i++)
+	{
+		if (var[0][i] <= dim)
+			path[index++] = var[0][i] - 1;
+	}
+	for (int i = 0; i < dim; i++)
+	{
+		res += map[path[i]][path[(i + 1) % dim]];
+	}
 	delete[] path;
 	return res;
 }
