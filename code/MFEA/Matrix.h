@@ -2,8 +2,9 @@
 class Matrix
 {
 private:
-	int a, b;
+	
 public:
+	int a, b;
 	double** mat;
 	//double mat[305][305];
 	Matrix();

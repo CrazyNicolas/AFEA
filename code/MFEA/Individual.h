@@ -14,7 +14,9 @@ public:
 	Individual(int, int);
 	void Update_Cost(Problem**, int);
 	void Init();
+	void Int_Init();
 	bool operator < (Individual&) const;
+	void Print_Solution(int);
 	~Individual();
 };
 

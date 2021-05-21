@@ -7,19 +7,18 @@ using namespace std;
 
 Matrix::Matrix() {}
 
-Matrix::Matrix(int _a, int _b)
+Matrix::Matrix(int _a, int _b)		//Create a matrix with size a * b and fitted with 0s
 {
 	a = _a; b = _b;
 	mat = new double*[a];
 	for (int i = 0; i < a; i++)
 		mat[i] = new double[b];
 	for (int i = 0; i < a; i++)
-		//memset(mat[i], 0, sizeof(mat[i]));
 		for (int j = 0; j < b; j++)
 			mat[i][j] = 0;
 }
 
-Matrix::Matrix(double one_dim[], int length)
+Matrix::Matrix(double one_dim[], int length)		//Create an one dimension matrix by copying an array
 {
 	a = 1; b = length;
 	mat = new double* [a];
@@ -28,7 +27,7 @@ Matrix::Matrix(double one_dim[], int length)
 		mat[0][i] = one_dim[i];
 }
 
-Matrix::Matrix(double** two_dim, int _a, int _b)
+Matrix::Matrix(double** two_dim, int _a, int _b)		//Create a matrix by copying a two dimension array
 {
 	a = _a; b = _b;
 	mat = new double* [a];
@@ -39,17 +38,18 @@ Matrix::Matrix(double** two_dim, int _a, int _b)
 			mat[i][j] = two_dim[i][j];
 }
 
-Matrix::Matrix(const Matrix& M)
+Matrix::Matrix(const Matrix& M)		//Override copy function
 {
 	a = M.a;  b = M.b;
 	mat = new double* [a];
 	for (int i = 0; i < a; i++)
 		mat[i] = new double[b];
 	for (int i = 0; i < a; i++)
-		//memcpy(mat[i], M.mat[i], b * sizeof(int));
 		for (int j = 0; j < b; j++)
 			mat[i][j] = M.mat[i][j];
 }
+
+/* Override [] + - * operator */
 
 double* Matrix::operator[](int i)
 {
@@ -111,7 +111,7 @@ Matrix Matrix::operator*(double x) const
 	return res;
 }
 
-Matrix Matrix::trans()
+Matrix Matrix::trans()		//Transpose
 {
 	Matrix res(b, a);
 	for (int i = 0; i < a; i++)
@@ -120,7 +120,7 @@ Matrix Matrix::trans()
 	return res;
 }
 
-Matrix Matrix::cut(int c, int d)
+Matrix Matrix::cut(int c, int d)		//Intercept a part of matrix
 {
 	Matrix res(c, d);
 	for (int i = 0; i < min(c, a); i++)
@@ -129,7 +129,7 @@ Matrix Matrix::cut(int c, int d)
 	return res;
 }
 
-Matrix Matrix::Rand(int _a, int _b)
+Matrix Matrix::Rand(int _a, int _b)		//Create a random matrix
 {
 	Matrix res(_a, _b);
 	srand((unsigned)time(0));
@@ -144,7 +144,8 @@ void Matrix::print()
 	for (int i = 0; i < a; i++)
 	{
 		for (int j = 0; j < b; j++)
-			printf("%lf ", mat[i][j]);
+			printf("%.0lf ", mat[i][j]);
+			//printf("%d ", int(mat[i][j]));
 		printf("\n");
 	}
 
@@ -152,7 +153,4 @@ void Matrix::print()
 
 Matrix::~Matrix()
 {
-	/*for (int i = 0; i < a; i++)
-		delete[] mat[i];
-	delete[] mat;*/
 }

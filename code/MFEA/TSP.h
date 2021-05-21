@@ -5,7 +5,6 @@ class TSP :
 	public Problem
 {
 public:
-	int dim;
 	Matrix map;
 	TSP();
 	void Init(int, Matrix);
