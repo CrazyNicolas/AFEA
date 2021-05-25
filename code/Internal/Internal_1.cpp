@@ -3,7 +3,7 @@
 #include <cstring>
 #include <time.h>
 #include <map>
-#include "../IOtool/IOtool.h"
+#include "IOtool.h"
 
 using namespace std;
 const int N = 300, LENGTH = 260;
@@ -20,7 +20,7 @@ class INDIV
 {
 public:
 	int length;
-	double gene[LENGTH];
+	double gene[LENGTH], momentum[LENGTH];
 	bool constrain()
 	{
 		return true;
@@ -28,6 +28,7 @@ public:
 	void Init()
 	{
 		length = len;
+		memset(momentum, 0, sizeof(momentum));
 		for (int i = 0; i < length; i++)
 			gene[i] = double(rand()) / RAND_MAX;
 	}
@@ -36,6 +37,17 @@ public:
 		for (int i = 0; i < length; i++)
 			printf("%lf ", gene[i]);
 		printf("\n");
+	}
+	double Ackley()
+	{
+		double res = 0, sum1 = 0, sum2 = 0;
+		for (int i = 0; i < length; i++)
+		{
+			sum1 += (gene[i] - 0.5) * (gene[i] - 0.5);
+			sum2 += cos(2 * acos(-1) * (gene[i] - 0.5));
+		}
+		sum1 /= length; sum2 /= length;
+		return -20 * exp(-0.2 * sqrt(sum1)) - exp(sum2) + 20 + exp(1);
 	}
 	double evaluation()
 	{
@@ -83,14 +95,15 @@ public:
 		}
 		return res;
 	}
-	void Mutation()
+	void Momentum_Mutation()
 	{
 		for (int i = 0; i < length; i++)
 		{
 			if (double(rand()) / RAND_MAX < Pm)
 			{
 				double y = gene[i];
-				gene[i] = gene[i] + Gaussian(gene[i]);
+				gene[i] = gene[i] + alpha * momentum[i] + Gaussian(gene[i]);
+				momentum[i] = gene[i] - y;
 			}
 		}
 	}
@@ -101,7 +114,7 @@ public:
 };
 INDIV population[N];
 
-void SBX(INDIV Pa, INDIV Pb, INDIV & Ca, INDIV & Cb)
+void SBX(INDIV Pa, INDIV Pb, INDIV& Ca, INDIV& Cb)
 {
 	double mu = 3;
 	for (int i = 0; i < len; i++)
@@ -131,7 +144,7 @@ void getOffspring()
 		swap(candidate[Xb], candidate[--num_candidate]);
 		INDIV Ca, Cb; Ca.Init(); Cb.Init();
 		SBX(population[Pa], population[Pb], Ca, Cb);
-		Ca.Mutation();  Cb.Mutation();
+		Ca.Momentum_Mutation();  Cb.Momentum_Mutation();
 		population[index++] = Ca;  population[index++] = Cb;
 	}
 	delete[] candidate;
@@ -158,7 +171,7 @@ int main()
 		epoch++;
 		getOffspring();
 		sort(population, population + n * 2);
-		for (int i = 0; i < 10; i++)
+		for(int i = 0; i < 10; i++)
 			population[i].print();
 		//printf("%lf\n\n", population[0].evaluation());
 		printf("\n\n");
