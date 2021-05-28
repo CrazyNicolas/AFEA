@@ -20,7 +20,7 @@ class INDIV
 {
 public:
 	int length;
-	double gene[LENGTH];
+	int gene[LENGTH];
 	bool constrain()
 	{
 		return true;
@@ -29,70 +29,36 @@ public:
 	{
 		length = len;
 		for (int i = 0; i < length; i++)
-			gene[i] = double(rand()) / RAND_MAX;
+			gene[i] = i + 1;
+		int i = 0, leng = length - 1, x;
+		while (leng > 0)
+		{
+			x = rand() % leng + 1;
+			swap(gene[i], gene[i + x]);
+			i++; leng--;
+		}
 	}
 	void print()
 	{
 		for (int i = 0; i < length; i++)
-			printf("%lf ", gene[i]);
+			printf("%d ", gene[i]);
 		printf("\n");
 	}
 	double evaluation()
 	{
-		//return Ackley();
-		struct Node
-		{
-			double value; int id;
-			bool operator < (Node x)
-			{
-				return value < x.value;
-			}
-		};
-		Node* node = new Node[length];
-		for (int i = 0; i < length; i++)
-		{
-			node[i].value = gene[i];
-			node[i].id = i;
-		}
-		sort(node, node + length);
-		int* path = new int[length];
-		for (int i = 0; i < length; i++)
-		{
-			path[node[i].id] = i + 1;
-		}
 		double res = 0;
 		for (int i = 0; i < length; i++)
 		{
-			res += Map[path[i]][path[(i + 1) % length]];
-		}
-		delete[] node;
-		delete[] path;
-		return res;
-	}
-	double Gaussian(double x)
-	{
-		double mum = 5, res = x;
-		double u = double(rand()) / RAND_MAX;
-		if (u <= 0.5)
-		{
-			res *= pow(2 * u, 1 / (1 + mum));
-		}
-		else
-		{
-			res = (x - 1) * pow(2 - 2 * u, 1 / (1 + mum)) + 1;
+			res += Map[gene[i]][gene[(i + 1) % length]];
 		}
 		return res;
 	}
 	void Mutation()
 	{
-		for (int i = 0; i < length; i++)
-		{
-			if (double(rand()) / RAND_MAX < Pm)
-			{
-				double y = gene[i];
-				gene[i] = gene[i] + Gaussian(gene[i]);
-			}
-		}
+		int a = rand() % length, b = rand() % length;
+		while(a == b)
+			b = rand() % length;
+		swap(gene[a], gene[b]);
 	}
 	bool operator < (INDIV x)
 	{
@@ -101,17 +67,83 @@ public:
 };
 INDIV population[N];
 
-void SBX(INDIV Pa, INDIV Pb, INDIV & Ca, INDIV & Cb)
+void PMX(INDIV Pa, INDIV Pb, INDIV& Ca, INDIV& Cb)
 {
-	double mu = 3;
+	int x = rand() % len;
+	int y = rand() % len;
+	if (x > y) swap(x, y);
+	map<int, int> pre, nex;
 	for (int i = 0; i < len; i++)
 	{
-		double u = double(rand()) / RAND_MAX;
-		double Beta = u <= 0.5 ? pow(2 * u, (1 / (mu + 1))) : pow(1 / (2 - 2 * u), (1 / (mu + 1)));
-		Ca.gene[i] = min(max(0.5 * (Pa.gene[i] + Pb.gene[i]) + 0.5 * Beta * (Pb.gene[i] - Pa.gene[i]), 0.0), 1.0);
-		Cb.gene[i] = min(max(0.5 * (Pb.gene[i] + Pa.gene[i]) + 0.5 * Beta * (Pa.gene[i] - Pb.gene[i]), 0.0), 1.0);
+		Ca.gene[i] = Pb.gene[i];
+		Cb.gene[i] = Pa.gene[i];
 	}
+	bool* vis1 = new bool[len + 1];
+	bool* vis2 = new bool[len + 1];
+	bool* vis = new bool[len + 1];
+	for (int i = 0; i <= len; i++)
+		vis1[i] = vis2[i] = vis[i] = false;
+	//Pa.gene.print(); Pb.gene.print();
+	for (int i = x; i <= y; i++)
+	{
+		int xx = Pa.gene[i], yy = Pb.gene[i];
+		vis1[yy] = vis2[xx] = 1;
+		if (xx == yy)
+			continue;
+		nex[xx] = yy;
+		pre[yy] = xx;
+	}
+	for (int i = x; i <= y; i++)
+	{
+		int xx = Pa.gene[i], yy = xx;
+		if (vis[xx])
+			continue;
+		vis[xx] = 1;
+		int Left = 0, Right = 0;
+		while (pre[xx] > 0 && !vis[pre[xx]])
+		{
+			xx = pre[xx];
+			vis[xx] = 1;
+		}
+		Left = xx;
+		while (nex[yy] > 0 && !vis[nex[yy]])
+		{
+			yy = nex[yy];
+			vis[yy] = 1;
+		}
+		Right = yy;
+		pre[Left] = Right;
+		nex[Right] = Left;
+	}
+
+	//Ca.gene.print(); Cb.gene.print();
+
+	for (int i = 0; i < len; i++)
+	{
+		if (i >= x && i <= y)
+			continue;
+		int xx = Pa.gene[i], yy = Pb.gene[i];
+		while (vis1[xx])
+		{
+			xx = nex[xx];
+		}
+		Ca.gene[i] = xx;
+		vis1[xx] = 1;
+		while (vis2[yy])
+		{
+			yy = nex[yy];
+		}
+		Cb.gene[i] = yy;
+		vis2[yy] = 1;
+	}
+	//Ca.gene.print(); Cb.gene.print();
+	//printf("\n");
+
+	delete[] vis1;
+	delete[] vis2;
+	delete[] vis;
 }
+
 
 void getOffspring()
 {
@@ -130,7 +162,7 @@ void getOffspring()
 		swap(candidate[Xa], candidate[--num_candidate]);
 		swap(candidate[Xb], candidate[--num_candidate]);
 		INDIV Ca, Cb; Ca.Init(); Cb.Init();
-		SBX(population[Pa], population[Pb], Ca, Cb);
+		PMX(population[Pa], population[Pb], Ca, Cb);
 		Ca.Mutation();  Cb.Mutation();
 		population[index++] = Ca;  population[index++] = Cb;
 	}
@@ -158,9 +190,7 @@ int main()
 		epoch++;
 		getOffspring();
 		sort(population, population + n * 2);
-		for (int i = 0; i < 10; i++)
-			population[i].print();
-		//printf("%lf\n\n", population[0].evaluation());
+		printf("%lf\n\n", population[0].evaluation());
 		printf("\n\n");
 	}
 	population[0].print();
