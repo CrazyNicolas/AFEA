@@ -12,14 +12,23 @@ using namespace std;
 //scaling factor between 0-2
 #define F 0.8
 //crossover rate
-#define CR 1
+#define CR 0.6
 //group size
-#define GROUP_SIZE 100
+#define GROUP_SIZE 20
 //number of cites
 #define CITES 52
 //iteration
-//#define EPOCH 10
-double** dis;
+#define EPOCH 500
+
+//define a struct for sorting with key
+typedef struct{
+	double value;
+	int key;
+}SortObj;
+bool compare(SortObj a, SortObj b){
+	return a.value < b.value;
+}
+
 double** Read_TSP(char* path)
 {
 	int a;
@@ -78,6 +87,39 @@ int** init_group(double **dis){
 	return group;
 }
 
+// init group with randome strategy, rv_threshold controls greedy
+int ** init_group(double **dis, double rv_threshold){
+	//allocating 2D array for group
+	int** group = new int*[GROUP_SIZE];
+	for(int i = 0; i < GROUP_SIZE; i++){
+		group[i] = new int[CITES];
+		//a visited table is needed
+		int visited[CITES];
+		for(int k = 0; k < CITES; k++) visited[k] = 0;
+		//randomly pick a start
+		int start = rand()%CITES;
+		group[i][0] = start;
+		visited[start] = 1;
+		for(int j = 1; j < CITES; j++){
+			double rv = (double)rand()/RAND_MAX;
+			if(rv < rv_threshold){
+				int nearest = find_nearest(dis,visited,start);
+				start = nearest;
+				group[i][j] = nearest; 
+			}else{
+				int next = (start+1+rand()%CITES)%CITES;
+				while(visited[next] == 1){
+					next = (start+1+rand()%CITES)%CITES;
+				}
+				group[i][j] = next;
+				visited[next] = 1;
+				start = next;
+			}
+		}
+	}
+	return group;
+}
+
 //get fitness
 double getfitness(int *indiv, double **dis){
 	double total_distance = 0;
@@ -103,44 +145,22 @@ int* mutation(int **group, int index){
 	while(r3 == index || r3 == r2 || r3 == r1){
 		r3 = rand()%GROUP_SIZE;
 	}
-	struct node
-	{
-		double value; int id;
-		bool operator < (node x)
-		{
-			return value < x.value;
-		}
-	};
-	double *v = new double[CITES];
+	SortObj *sobjs = new SortObj[CITES];
 	for(int i = 0; i < CITES; i++){
-		v[i] = group[r1][i] + F * (group[r2][i] - group[r3][i]);
+		sobjs[i].value = group[r1][i] + F * (group[r2][i] - group[r3][i]);
+		sobjs[i].key = i;
 	}
-	node v_prime[CITES];
-	for (int i = 0; i < CITES; i++)
-	{
-		v_prime[i].value = v[i];
-		v_prime[i].id = i;
-	}
-	/*double *v_prime = new double[CITES];
-	memcpy(v_prime, v, CITES * sizeof(double));*/
-	sort(v_prime, v_prime + CITES);
+	sort(sobjs, sobjs + CITES, compare);
 	int *result = new int[CITES];
-	/*for(int i = 0; i < CITES; i++){
-		for(int j = 0; j < CITES; j++){
-			if(v[i] == v_prime[j]) result[i] = j;
-		}
-	}*/
-	for (int i = 0; i < CITES; i++)
-	{
-		result[v_prime[i].id] = i;
+	for(int i = 0; i < CITES; i++){
+		result[sobjs[i].key] = i;
 	}
-	delete[] v;
-	//delete[] v_prime;
+	delete[] sobjs;
 	return result;
 
 }
 
-int* crossover(int* x, int* v){
+int* crossover(int* x, int* v, double** dis){
 	double rv = (double)rand()/RAND_MAX;
 	if(rv > CR) return x;
 	int current_x = 0;
@@ -164,59 +184,7 @@ int* crossover(int* x, int* v){
 	visited[x[current_x]] = 1;
 	offspring[index++] = x[current_x];
 	while(index < CITES){//end condition
-		// // step 2 in paper
-		// if(visited[x[(current_x + 1)%CITES]] == 0 && visited[v[(current_v + 1)%CITES]] == 0){
-		// 	if(dis[x[current_x]][x[(current_x + 1)%CITES]] >= dis[v[current_v]][v[(current_v + 1)%CITES]]){
-		// 		for(int c = 0; c < CITES; c++){
-		// 				if(x[c] == v[(current_v + 1)%CITES]){
-		// 					current_x = c;
-		// 					cout<<"2.1 "<<current_x<<endl;
-		// 					break;
-		// 				}
-		// 			}
-		// 	}else{
-		// 		current_x = (current_x + 1)%CITES;
-		// 		cout<<"2.2 "<<current_x<<endl;
 
-		// 	}
-		// }
-		// //step 3 in paper
-		// for(int k = 0; k < CITES; k++){
-		// 	if(v[k] == x[current_x]){
-		// 		current_v = k;
-		// 		cout<<"3 "<<current_v<<endl;
-		// 		if(visited[x[current_x]] == 0){
-		// 			offspring[index++] = x[current_x];
-		// 			visited[x[current_x]] = 1;
-		// 		}
-		// 		break;
-		// 	}
-		// }
-		// //step 4 in paper
-		// if(visited[x[(current_x+1)%CITES]] == 1 && visited[v[(current_v+1)%CITES]] == 0){
-		// 	for(int c = 0; c < CITES; c++){
-		// 		if(x[c] == v[(current_v+1)%CITES]){
-		// 			current_x = c;
-		// 			cout<<"4.1 "<<current_x<<endl;
-		// 			offspring[index++] = x[current_x];
-		// 			visited[x[current_x]] = 1;
-		// 		}
-		// 	}
-		// }else if(visited[x[(current_x+1)%CITES]] == 0 && visited[v[(current_v+1)%CITES]] == 1){
-		// 	current_x = (current_x + 1)%CITES;
-		// 	for(int k = 0; k < CITES; k++){
-		// 		if(v[k] == x[current_x]){
-		// 			current_v = k;
-		// 			cout<<"4.1 "<<current_v<<endl;
-		// 		}
-		// 	}
-		// 	cout<<"4.2 "<<current_x<<endl;
-		// }else if(visited[x[(current_x+1)%CITES]] == 0 && visited[v[(current_v+1)%CITES]] == 0){
-		// 	continue;
-		// }else{
-		// 	current_x = (current_x + 1) % CITES;
-		// 	current_v = (current_x + 1) % CITES;
-		// }
 		//find next unvisited point in x
 		int idx_x = (current_x + 1) % CITES;
 		while(visited[x[idx_x]] == 1){
@@ -229,6 +197,7 @@ int* crossover(int* x, int* v){
 		while(visited[v[idx_v]] == 1){
 			idx_v = (idx_v + 1) % CITES;
 		}
+
 		if(dis[x[current_x]][x[idx_x]] < dis[v[current_v]][v[idx_v]]){
 			offspring[index++] = x[idx_x];
 			visited[x[idx_x]] = 1;
@@ -249,9 +218,9 @@ int* crossover(int* x, int* v){
 			}
 		}
 	}
-	delete[] visited;
+
 	return offspring;
-	
+	delete[] visited;
 
 }
 
@@ -259,17 +228,17 @@ int main(int argc, char **argv){
 	//random seed
 	srand(time(0));
 	//load the dis matrix
-	dis = Read_TSP((char*)"berlin52.tsp");
-
-	for(int i = 0; i < CITES; i++){
-		for(int j = 0; j < CITES; j++){
-			printf("%.2f\t",dis[i][j]);
-		}
-		cout<<endl;
-	}
-	cout<<endl;
+	double **dis = Read_TSP((char*)"berlin52.tsp");
+	//test dis mat read correctly
+	// for(int i = 0; i < CITES; i++){
+	// 	for(int j = 0; j < CITES; j++){
+	// 		printf("%.2f\t",dis[i][j]);
+	// 	}
+	// 	cout<<endl;
+	// }
+	// cout<<endl;
 	// init it
-	int **group = init_group(dis);
+	int **group = init_group(dis,0.5);
 	//TEST if __init__ is successful
 	// for(int i = 0 ; i < GROUP_SIZE; i++){
 	// 	for(int j = 0; j < CITES; j++){
@@ -281,59 +250,63 @@ int main(int argc, char **argv){
 	//every generation, offspings needs same space as group
 	int **offspings = new int*[GROUP_SIZE];
 	//begin the iteration
-	int epoch = 100;
-	//best fitness
-	double best_fitness = 0;
-	 while(epoch--){
-	 	clock_t start = clock();
-	 	int* variant;
-	 	for(int i = 0; i < GROUP_SIZE; i++){
-	 		variant = mutation(group,i);
-	 		offspings[i] = crossover(group[i],variant);
-	 	}
-	 	for(int i = 0; i < GROUP_SIZE; i++){
-	 		double f_parent = getfitness(group[i],dis);
-	 		double f_offspring = getfitness(offspings[i],dis);
-	 		if(f_offspring >= f_parent){
-	 			group[i] = offspings[i];
-	 			if(f_offspring > best_fitness){
-	 				best_fitness = f_offspring;
-	 			}
-	 		}
-	 	}
-	 	clock_t end = clock();
-	 	printf("epoch %d, time used: %.3f s, best_fitness: %lf\n",100 - epoch,(double)(end - start)/CLOCKS_PER_SEC, best_fitness);
+	int epoch = EPOCH;
+	
+	while(epoch--){
+		//best fitness
+		double best_fitness = 0;
+		clock_t start = clock();
+		int* variant;
+		for(int i = 0; i < GROUP_SIZE; i++){
+			variant = mutation(group,i);
+			offspings[i] = crossover(group[i],variant,dis);
+		}
+		for(int i = 0; i < GROUP_SIZE; i++){
+			double f_parent = getfitness(group[i],dis);
+			double f_offspring = getfitness(offspings[i],dis);
+			if(f_offspring > f_parent){
+				group[i] = offspings[i];
+			}
+			if(f_offspring > best_fitness){
+				best_fitness = f_offspring;
+			}
+			if(f_parent > best_fitness){
+				best_fitness = f_parent;
+			}
+		}
+		clock_t end = clock();
+		printf("epoch %d, time used: %.3f s, best_fitness: %lf\n",EPOCH - epoch,(double)(end - start)/CLOCKS_PER_SEC, best_fitness);
 
-	 }
+	}
 
 	//DEBUG-START
-	/*for(int i = 0 ; i < GROUP_SIZE; i ++){
-		int *v = mutation(group,i);
-		for(int j =0 ; j < CITES; j++){
-			cout<<group[i][j]<<" ";
-		}
-		cout<<endl;
-		for(int j =0 ; j< CITES; j++){
-			cout<<v[j]<<" ";
-		}
-		cout<<endl;
+	// for(int i = 0 ; i < GROUP_SIZE; i ++){
+	// 	int *v = mutation(group,i);
+	// 	for(int j =0 ; j < CITES; j++){
+	// 		cout<<group[i][j]<<" ";
+	// 	}
+	// 	cout<<endl;
+	// 	for(int j =0 ; j< CITES; j++){
+	// 		cout<<v[j]<<" ";
+	// 	}
+	// 	cout<<endl;
 
-		int *res = crossover(group[i],v);
+	// 	int *res = crossover(group[i],v,dis);
 	
-		for(int j =0 ; j< CITES; j++){
-			cout<<res[j]<<" ";
-		}
-		cout<<endl;
-		cout<<endl;
-	}*/
+	// 	for(int j =0 ; j< CITES; j++){
+	// 		cout<<res[j]<<" ";
+	// 	}
+	// 	cout<<endl;
+	// 	cout<<endl;
+	// }
 	//DEBUG-END
 
 	// free spaces dynamically allocated before
 	for(int i = 0; i < GROUP_SIZE; i++){
 		delete[] group[i];
-		//delete[] offspings[i];
+		delete[] offspings[i];
 	}
 	delete[] group;
-	//delete[] offspings;
+	delete[] offspings;
 	return 0;
 }
