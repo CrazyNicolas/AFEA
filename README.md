@@ -8,6 +8,15 @@ ___IEEE Transaction on Evolutionary Computing, paper: "AFEA:XXXXX"___
  </div>
 
  ### FILE STRUCTURE
+ ```
+ |-- AFEA
+    |-- README.md
+    |-- main.py
+    |-- overview.png
+    |-- code
+    |-- data
+    |-- experiment
+ ```
  > The ***code*** dir contains implementation of ***AFEA*** and other algorithms need to compare. You can check ***README.md*** in ***code***.
  
  > The ***data*** dir stores all correctly formed data which are used in every experiment in this project.
