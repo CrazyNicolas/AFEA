@@ -1,85 +1,33 @@
+#include "Internal_2.h"
 #include <iostream>
 #include <algorithm>
 #include <cstring>
 #include <time.h>
+#include <cmath>
 #include <vector>
 #include <map>
-#include "IOtool.h"
-
 using namespace std;
-const int N = 300, LENGTH = 260;
-int n, len, Epoch = 100;
-double Pm = 0.1, Pc = 0.8;
-double** Map;
 
-double Distance(int a, int b)
+Internal_2::Internal_2()
+{
+	n = 100;
+	Epoch = 1000;
+	Pm = 0.01;
+	Pc = 0.8;
+}
+
+double Internal_2::Distance(int a, int b)
 {
 	return Map[a][b];
 }
 
-class INDIV
+void Internal_2::CX2(INDIV Pa, INDIV Pb, INDIV& Ca, INDIV& Cb)
 {
-public:
-	int length;
-	int gene[LENGTH];
-	bool constrain()
-	{
-		return true;
-	}
-	void Init()
-	{
-		length = len;
-		for (int i = 0; i < length; i++)
-			gene[i] = i + 1;
-		int i = 0, leng = length - 1, x;
-		while (leng > 0)
-		{
-			x = rand() % leng + 1;
-			swap(gene[i], gene[i + x]);
-			i++; leng--;
-		}
-	}
-	void print()
-	{
-		for (int i = 0; i < length; i++)
-			printf("%d ", gene[i]);
-		printf("\n");
-	}
-	double evaluation()
-	{
-		double res = 0;
-		for (int i = 0; i < length; i++)
-		{
-			res += Map[gene[i]][gene[(i + 1) % length]];
-		}
-		return res;
-	}
-	void Mutation()
-	{
-		if (double(rand()) / RAND_MAX < Pm)
-		{
-			int a = rand() % length, b = rand() % length;
-			while (a == b)
-				b = rand() % length;
-			swap(gene[a], gene[b]);
-		}
-	}
-	bool operator < (INDIV x)
-	{
-		return evaluation() < x.evaluation();
-	}
-};
-INDIV population[N];
-
-void CX2(INDIV Pa, INDIV Pb, INDIV& Ca, INDIV& Cb)
-{
-	int a = rand() % len, b = rand() % len; 
+	int a = rand() % len, b = rand() % len;
 	while (b == a)
 		b = rand() % len;
 	if (a > b)
 		swap(a, b);
-	//bool *vis1 = new bool[len + 1];
-	//bool *vis2 = new bool[len + 1];
 	bool vis1[LENGTH + 1], vis2[LENGTH + 1];
 	memset(vis1, 0, sizeof(vis1));
 	memset(vis2, 0, sizeof(vis2));
@@ -165,7 +113,7 @@ void CX2(INDIV Pa, INDIV Pb, INDIV& Ca, INDIV& Cb)
 	//delete[] vis1, vis2;
 }
 
-void getOffspring()
+void Internal_2::getOffspring()
 {
 	int index = n, cur_size = n * 2, num_candidate = n;
 	int* candidate = new int[n];
@@ -183,7 +131,7 @@ void getOffspring()
 		swap(candidate[Xb], candidate[--num_candidate]);
 		if (double(rand()) / RAND_MAX < Pc)
 		{
-			INDIV Ca, Cb; Ca.Init(); Cb.Init();
+			INDIV Ca, Cb; Ca.Init(len, Pm, Pc, Map); Cb.Init(len, Pm, Pc, Map);
 			CX2(population[Pa], population[Pb], Ca, Cb);
 			Ca.Mutation();  Cb.Mutation();
 			population[index++] = Ca;  population[index++] = Cb;
@@ -193,29 +141,27 @@ void getOffspring()
 	delete[] candidate;
 }
 
-int main()
+void Internal_2::solve(char* data_path)
 {
-	Map = Read_TSP((char*)"TSP16i.txt", len);
-	//for (int i = 1; i <= len; i++)
-	//{
-	//	for (int j = 1; j <= len; j++)
-	//		printf("%lf ", Map[i][j]);
-	//	printf("\n");
-	//}
+	Map = Read_TSP(data_path, len);
 	srand(unsigned(time(0)));
-	n = 100;// len = 30;
 	for (int i = 0; i < n; i++)
 	{
-		population[i].Init();
+		population[i].Init(len, Pm, Pc, Map);
 	}
 	int epoch = 0;
 	while (epoch < Epoch)
 	{
 		epoch++;
 		getOffspring();
-		population[0].print();
-		printf("%lf\n", population[0].evaluation());
 	}
 	population[0].print();
-	printf("%lf\n", population[0].evaluation());
+	//res = new int[len];
+	//for (int i = 0; i < len; i++)
+	//	res[i] = population[0].gene[i];
+}
+
+
+Internal_2::~Internal_2()
+{
 }

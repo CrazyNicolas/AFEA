@@ -4,19 +4,21 @@
 #include <algorithm>
 #include <cmath>
 #include "oneapi/tbb.h"
+#include "../../IOtool/IOtool.h"
 
 using namespace oneapi::tbb;
 const int N = 505, sub_size = 30, popul_size = 1000, LENGTH = 505;
 int n, len, Epoch = 150, Count = 50;
 double Pc = 0.95, Pm = 0.05, eps = 1e-5;
-struct Node
-{
-	double x, y;
-	double dist(Node b)
-	{
-		return sqrt((x - b.x) * (x - b.x) + (y - b.y) * (y - b.y));
-	}
-}node[N];
+double **Map;
+//struct Node
+//{
+//	double x, y;
+//	double dist(Node b)
+//	{
+//		return sqrt((x - b.x) * (x - b.x) + (y - b.y) * (y - b.y));
+//	}
+//}node[N];
 class INDIV
 {
 public:
@@ -31,7 +33,7 @@ public:
 		double res = 0;
 		for (int i = 0; i < length; i++)
 		{
-			res += node[gene[i]].dist(node[gene[(i + 1) % length]]);
+			res += Map[gene[i]][gene[(i + 1) % length]];
 		}
 		return res;
 	}
@@ -67,10 +69,6 @@ bool fullCheck()
 }
 void Crossover(INDIV p1, INDIV p2, INDIV& s1, INDIV& s2)
 {
-	if (!check(p1) || !check(p2))
-	{
-		printf("????\n");
-	}
 	int x = rand() % (p1.length);
 	int y = rand() % (p2.length);
 	if (x > y) std::swap(x, y);
@@ -107,31 +105,6 @@ void Crossover(INDIV p1, INDIV p2, INDIV& s1, INDIV& s2)
 		if(b < p2.length)
 			s2.gene[i] = p2.gene[b++];
 	}
-	if (!check(s1) || !check(s2))
-	{
-		printf("%d %d\n", x, y);
-		for (int i = 0; i < len; i++)
-		{
-			printf("%d ", p1.gene[i]);
-		}
-		printf("\n");
-		for (int i = 0; i < len; i++)
-		{
-			printf("%d ", p2.gene[i]);
-		}
-		printf("\n");
-		for (int i = 0; i < len; i++)
-		{
-			printf("%d ", s1.gene[i]);
-		}
-		printf("\n");
-		for (int i = 0; i < len; i++)
-		{
-			printf("%d ", s2.gene[i]);
-		}
-		printf("\n\n");
-		system("pause");
-	}
 }
 
 bool cmp_INDIV(INDIV a, INDIV b)
@@ -141,7 +114,7 @@ bool cmp_INDIV(INDIV a, INDIV b)
 class GA
 {
 public:
-	
+
 	void operator() (const blocked_range<int>& r) const
 	{
 		printf("%d\n", r.begin());
@@ -156,33 +129,26 @@ public:
 			if (pp > Pc)
 				continue;
 			INDIV tmp[4]; tmp[0] = population[i]; tmp[1] = population[i + 1];
-			
+
 			/*INDIV ss1, ss2;
 			INDIV *s1 = &ss1, *s2 = &ss2;*/
 			tmp[3].level = tmp[2].level = population[i].level;
 			tmp[3].length = tmp[2].length = population[i].length;
-			if (!check(population[i]) || !check(population[i + 1]))
-			{
-				printf("??dsaas\n");
-				system("pause");
-			}
 			Crossover(tmp[0], tmp[1], tmp[2], tmp[3]);
-			
-			
+
+
 			std::sort(tmp, tmp + 4, cmp_INDIV);
 			//std::cout << lev << std::endl;
 			population[i] = tmp[0]; population[i + 1] = tmp[1];
 			//delete tmp[2], tmp[3];
 		}
-		
+
 		for (int i = r.begin(); i != r.end(); i++)
 		{
 			double pp = (double)(rand() % 100) / 100.0;
 			if (pp > lev * Pm)
 				continue;
 			population[i].Mutation();
-			if (!check(population[i]))
-				system("pause");
 		}
 		std::sort(population + r.begin(), population + r.end(), cmp_INDIV);
 
@@ -257,26 +223,22 @@ public:
 int main()
 {
 	srand((unsigned)time(0));
-	std::cin >> n; len = n;
-	for (int i = 1; i <= n; i++)
-	{
-		int x;
-		std::cin >> x >> node[i].x >> node[i].y;
-	}
+//	std::cin >> n; len = n;
+//	for (int i = 1; i <= n; i++)
+//	{
+//		int x;
+//		std::cin >> x >> node[i].x >> node[i].y;
+//	}
+    Read_TSP(Map, len);
 	parallel_for(blocked_range<int>(0, sub_size * 8, sub_size), Init());
 	double last = 1e9;
 	int count = 0, epoch = 0;
 	while (epoch < Epoch && count < Count)
 	{
 		parallel_for(blocked_range<int>(0, sub_size * 8, sub_size), GA());
-		
+
 
 		parallel_for(blocked_range<int>(0, 4 * sub_size, sub_size), Select2Pass());
-		if (!fullCheck())
-		{
-			printf("sadsadasdad\n");
-			system("pause");
-		}
 		if (fabs(population[0].evaluation() - last) < eps)
 			count++;
 		else
@@ -284,10 +246,10 @@ int main()
 		if(last > population[0].evaluation())
 			last = population[0].evaluation();
 		printf("%lf\n", last);
-		
+
 		epoch++;
 	}
-	
+
 	for (int i = 0; i < len; i++)
 	{
 		printf("%d ", population[0].gene[i]);

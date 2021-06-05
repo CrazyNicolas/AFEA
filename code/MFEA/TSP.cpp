@@ -1,6 +1,6 @@
 #include "TSP.h"
 #include <algorithm>
-
+#include <iostream>
 using namespace std;
 TSP::TSP()
 {
@@ -48,7 +48,7 @@ double TSP::solve(Matrix var)
 	for (int i = 0; i < var.b; i++)
 	{
 		if (var[0][i] <= dim)
-			path[index++] = var[0][i] - 1;
+			path[index++] = var[0][i];
 	}
 	for (int i = 0; i < dim; i++)
 	{

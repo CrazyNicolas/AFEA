@@ -3,8 +3,8 @@
 #include <cstring>
 #include <algorithm>
 #include <cmath>
-#include "IOtool.h"
 #include "oneapi/tbb.h"
+#include "../../IOtool/IOtool.h"
 #pragma warning(disable : 4996)
 using namespace oneapi::tbb;
 
@@ -251,7 +251,7 @@ public:
 		srand(Random[r.begin()]);
 		for (int i = r.begin(); i < r.end(); i++)
 		{
-			if (population[i].state > 0) 
+			if (population[i].state > 0)
 			{
 				population[i] = Sa(sub_popul[i]);
 			}
@@ -264,7 +264,7 @@ int main()
 {
 	srand((unsigned)time(0));
 	n = 10; rule = 2;
-	
+
 	Map = Read_TSP((char*)"TSP48i.txt", len);
 	//for (int i = 1; i <= n; i++)
 	//{

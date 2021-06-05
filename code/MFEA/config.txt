@@ -1,0 +1,6 @@
+Population size=100
+Crossover rate = 0.5
+Iteration=500
+Problem=TSP
+Instacne number=3
+Data path=TSP16.txt TSP22.txt TSP48.txt

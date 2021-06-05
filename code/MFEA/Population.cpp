@@ -1,5 +1,6 @@
 #include "Population.h"
 #include <map>
+#include <iostream>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -8,11 +9,11 @@
 using namespace std;
 
 
-Population::Population(int _dim, int _size, int _num_problems, double off, double cr)
+Population::Population(int _dim, int _size, int _num_problems, double cr)
 {
 	srand((unsigned)time(0));
 	size = _size; num_problems = _num_problems;
-	off_scale = off; cr_rate = cr;
+	cr_rate = cr;
 	dim = _dim;
 	/*factorial_rank = new int*[size * 2];
 	for (int i = 0; i < size * 2; i++)
@@ -173,10 +174,92 @@ void Population::PMX(Individual Pa, Individual Pb, Individual& Ca, Individual& C
 	}
 	//Ca.gene.print(); Cb.gene.print();
 	//printf("\n");
-
 	delete[] vis1;
 	delete[] vis2;
 	delete[] vis;
+	for (int i = 0; i < Ca.length; i++)
+		if (Ca.gene[0][i] != Pa.gene[0][i])
+			return;
+	system("pause");
+}
+
+void Population::OX(Individual Pa, Individual Pb, Individual& Ca, Individual& Cb)
+{
+	int x = rand() % dim;
+	int y = rand() % dim;
+	while (x == y)
+		y = rand() % dim;
+	if (x > y) swap(x, y);
+	bool* vis1 = new bool[dim + 1];
+	bool* vis2 = new bool[dim + 1];
+	for (int i = 0; i <= dim; i++)
+		vis1[i] = vis2[i] = false;
+	for (int i = x; i <= y; i++)
+	{
+		Ca.gene[0][i] = Pb.gene[0][i];
+		vis1[int(Ca.gene[0][i])] = true;
+		Cb.gene[0][i] = Pa.gene[0][i];
+		vis2[int(Cb.gene[0][i])] = true;
+	}
+	int ia = 0, ib = 0;
+	for (int i = 0; i < dim; i++)
+	{
+		if (i >= x && i <= y)
+			continue;
+		while (vis1[int(Pa.gene[0][ia])])
+			ia++;
+		Ca.gene[0][i] = Pa.gene[0][ia++];
+		while (vis2[int(Pb.gene[0][ib])])
+			ib++;
+		Cb.gene[0][i] = Pb.gene[0][ib++];
+	}
+	delete[] vis1;
+	delete[] vis2;
+	for (int i = 0; i < Ca.length; i++)
+		if (Ca.gene[0][i] != Pa.gene[0][i])
+			return;
+	Pa.Print_Solution(31); Pb.Print_Solution(31);
+	system("pause");
+}
+
+void Population::OBX(Individual Pa, Individual Pb, Individual& Ca, Individual& Cb)
+{
+	bool* vis1 = new bool[dim + 1];
+	bool* vis2 = new bool[dim + 1];
+	bool* vis = new bool[dim + 1];
+	for (int i = 0; i <= dim; i++)
+		vis1[i] = vis2[i] = vis[i] = false;
+	for (int i = 0; i < dim / 2; i++)
+	{
+		int x = rand() % dim;
+		while (vis[x])
+			x = rand() % dim;
+		vis[x] = true;
+		Ca.gene[0][x] = Pb.gene[0][x];
+		Cb.gene[0][x] = Pa.gene[0][x];
+		vis1[int(Ca.gene[0][x])] = vis2[int(Cb.gene[0][x])] = true;
+	}
+	int ia = 0, ib = 0;
+	for (int i = 0; i < dim; i++)
+	{
+		if (vis[i])
+			continue;
+		while (vis1[int(Pa.gene[0][ia])])
+			ia++;
+		Ca.gene[0][i] = Pa.gene[0][ia++];
+		while (vis2[int(Pb.gene[0][ib])])
+			ib++;
+		Cb.gene[0][i] = Pb.gene[0][ib++];
+	}
+	delete[] vis1;
+	delete[] vis2;
+	delete[] vis;
+	for (int i = 0; i < Ca.length; i++)
+		if (Ca.gene[0][i] != Pa.gene[0][i])
+			return;
+	//Pa.Print_Solution(31); Pb.Print_Solution(31);
+	//system("pause");
+
 }
 
 Individual Population::Gaussian_Mu(Individual P)
@@ -210,7 +293,7 @@ Individual Population::Swap_Mu(Individual P)
 
 void Population::getOffspring(Problem** problem_set)
 {
-	int index = size, cur_size = size * (1 + off_scale), num_candidate = size;
+	int index = size, cur_size = size * 2, num_candidate = size;
 	int* candidate = new int[size];
 	for (int i = 0; i < size; i++)
 		candidate[i] = i;
@@ -237,7 +320,9 @@ void Population::getOffspring(Problem** problem_set)
 		if (popul[Pa].skill_factor == popul[Pb].skill_factor || double(rand()) / RAND_MAX < cr_rate)
 		{
 			//SBX(popul[Pa], popul[Pb], Ca, Cb);
-			PMX(popul[Pa], popul[Pb], Ca, Cb);
+			//PMX(popul[Pa], popul[Pb], Ca, Cb);
+			//OX(popul[Pa], popul[Pb], Ca, Cb);
+			OBX(popul[Pa], popul[Pb], Ca, Cb);
 			//popul[Pa].gene.print(); popul[Pb].gene.print();
 			//Ca.gene.print();  Cb.gene.print();
 
@@ -265,7 +350,7 @@ void Population::getOffspring(Problem** problem_set)
 		}
 		popul[index++] = Ca;  popul[index++] = Cb;
 	}
-	Update_Factor(size * (1 + off_scale));
+	Update_Factor(size * 2);
 	delete[] candidate;
 }
 
@@ -277,7 +362,7 @@ void Population::Select()
 	//	begin = 1;
 	//for (int i = begin; i < size; i++)
 	//	std::swap(popul[i], popul[i + size]);
-	std::sort(popul, popul + (int(size * (1 + off_scale))));
+	std::sort(popul, popul + (int(size * 2)));
 	Update_Factor(size);
 }
 
