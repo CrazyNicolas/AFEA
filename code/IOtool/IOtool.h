@@ -9,6 +9,10 @@ using namespace std;
 
 double** Read_TSP(char* path, int& n);
 
+double*** Read_TSP_batch(char* path, int need, int &n);
+
 double** Read_TSP(int CITES, char* path);
 
 double** Read_CVRP(char* path, int& n, int &track, double &capacity);
+
+double*** Read_CVRP_batch(char* path, int need, int &n);

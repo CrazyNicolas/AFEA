@@ -16,6 +16,24 @@ Individual::Individual(int _length, int num_problems): gene(1, _length)		//Initi
 		factorial_cost[i] = 1e9;
 }
 
+Individual::Individual(const Individual& I)
+{
+	for (int i = 0; i < 20; i++)
+		factorial_cost[i] = I.factorial_cost[i];
+	scalar_fitness = I.scalar_fitness;
+	skill_factor = I.skill_factor, length = I.length;
+	gene = I.gene;
+}
+
+Individual& Individual::operator=(Individual I)
+{
+	for (int i = 0; i < 20; i++)
+		factorial_cost[i] = I.factorial_cost[i];
+	scalar_fitness = I.scalar_fitness;
+	skill_factor = I.skill_factor, length = I.length;
+	gene = I.gene;
+	return *this;
+}
 
 void Individual::Update_Cost(Problem **problem_set, int num_problems)
 {
@@ -41,6 +59,8 @@ void Individual::Int_Init()
 		i++; len--;
 	}
 }
+
+
 
 bool Individual::operator<(Individual& obj) const
 {

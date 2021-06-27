@@ -180,7 +180,6 @@ void Population::PMX(Individual Pa, Individual Pb, Individual& Ca, Individual& C
 	for (int i = 0; i < Ca.length; i++)
 		if (Ca.gene[0][i] != Pa.gene[0][i])
 			return;
-	system("pause");
 }
 
 void Population::OX(Individual Pa, Individual Pb, Individual& Ca, Individual& Cb)
@@ -218,8 +217,6 @@ void Population::OX(Individual Pa, Individual Pb, Individual& Ca, Individual& Cb
 	for (int i = 0; i < Ca.length; i++)
 		if (Ca.gene[0][i] != Pa.gene[0][i])
 			return;
-	Pa.Print_Solution(31); Pb.Print_Solution(31);
-	system("pause");
 }
 
 void Population::OBX(Individual Pa, Individual Pb, Individual& Ca, Individual& Cb)
@@ -258,7 +255,34 @@ void Population::OBX(Individual Pa, Individual Pb, Individual& Ca, Individual& C
 		if (Ca.gene[0][i] != Pa.gene[0][i])
 			return;
 	//Pa.Print_Solution(31); Pb.Print_Solution(31);
-	//system("pause");
+
+}
+
+void Population::SEC(Individual Pa, Individual Pb, Individual& Ca, Individual& Cb)
+{
+	int x = rand() % dim;
+	int y = rand() % dim;
+	while (x == y)
+		y = rand() % dim;
+	if (x > y) swap(x, y);
+	bool* vis = new bool[dim + 1];
+	for (int i = 0; i <= dim; i++)
+		vis[i] = false;
+	for (int i = x; i <= y; i++)
+		vis[int(Pa.gene[0][i])] = true;
+	for(int i = 0; i < dim; i++)
+		Ca.gene[0][i] = Pa.gene[0][i];
+	int ia = x;
+	for (int i = 0; i < dim; i++)
+	{
+		Cb.gene[0][i] = Pb.gene[0][i];
+		if (vis[int(Cb.gene[0][i])])
+			swap(Cb.gene[0][i], Ca.gene[0][ia++]);
+	}
+	for (int i = 0; i < Ca.length; i++)
+		if (Ca.gene[0][i] != Pa.gene[0][i])
+			return;
+	//Pa.Print_Solution(31); Pb.Print_Solution(31);
 
 }
 
@@ -293,27 +317,14 @@ Individual Population::Swap_Mu(Individual P)
 
 void Population::getOffspring(Problem** problem_set)
 {
-	int index = size, cur_size = size * 2, num_candidate = size;
-	int* candidate = new int[size];
-	for (int i = 0; i < size; i++)
-		candidate[i] = i;
+	int index = size, cur_size = size * 2;
 	while (index < cur_size)
 	{
-		//int Pa = double(rand()) / RAND_MAX * size, Pb = double(rand()) / RAND_MAX * size;
-		//Pa = std::min(Pa, size - 1);
-		//while (Pb == Pa || Pb == size)
-		//{
-		//	Pb = double(rand()) / RAND_MAX * size;
-		//}
-
-		int Xa = rand() % num_candidate, Xb = rand() % num_candidate;
-		while (Xa == Xb)
+		int Pa = rand() % size, Pb = rand() % size;
+		while (Pa == Pb)
 		{
-			Xb = rand() % num_candidate;
+			Pb = rand() % size;
 		}
-		int Pa = candidate[Xa], Pb = candidate[Xb];
-		swap(candidate[Xa], candidate[--num_candidate]);
-		swap(candidate[Xb], candidate[--num_candidate]);
 
 		Individual Ca(dim, num_problems), Cb(dim, num_problems);
 		int ProA = popul[Pa].skill_factor, ProB = popul[Pb].skill_factor;
@@ -323,8 +334,7 @@ void Population::getOffspring(Problem** problem_set)
 			//PMX(popul[Pa], popul[Pb], Ca, Cb);
 			//OX(popul[Pa], popul[Pb], Ca, Cb);
 			OBX(popul[Pa], popul[Pb], Ca, Cb);
-			//popul[Pa].gene.print(); popul[Pb].gene.print();
-			//Ca.gene.print();  Cb.gene.print();
+			//SEC(popul[Pa], popul[Pb], Ca, Cb);
 
 			if (double(rand()) / RAND_MAX < 0.5)
 			{
@@ -348,10 +358,11 @@ void Population::getOffspring(Problem** problem_set)
 			Cb = Swap_Mu(popul[Pb]);
 			Cb.factorial_cost[ProB] = problem_set[ProB]->solve(Cb.gene);
 		}
+
 		popul[index++] = Ca;  popul[index++] = Cb;
+
 	}
 	Update_Factor(size * 2);
-	delete[] candidate;
 }
 
 void Population::Select()
@@ -363,6 +374,15 @@ void Population::Select()
 	//for (int i = begin; i < size; i++)
 	//	std::swap(popul[i], popul[i + size]);
 	std::sort(popul, popul + (int(size * 2)));
+	int index = num_problems, s = size - index;
+	while (index < size)
+	{
+		int x = rand() % s + index, y = rand() % s + index;
+		if (popul[x].scalar_fitness > popul[y].scalar_fitness)
+			swap(popul[index++], popul[x]);
+		else
+			swap(popul[index++], popul[y]);
+	}
 	Update_Factor(size);
 }
 
@@ -382,8 +402,8 @@ Individual Population::operator[](int i)
 
 Population::~Population()
 {
-	/*delete[] popul;
-	for (int i = 0; i < size; i++)
-		delete[] factorial_rank[i];
-	delete[] factorial_rank;*/
+	//delete[] popul;
+	//for (int i = 0; i < size; i++)
+	//	delete[] factorial_rank[i];
+	//delete[] factorial_rank;
 }

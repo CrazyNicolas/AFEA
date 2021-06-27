@@ -1,11 +1,15 @@
 #include "Matrix.h"
 #include <cstring>
 #include <algorithm>
+#include <Windows.h>
 #include <cmath>
 #include <time.h>
 using namespace std;
 
-Matrix::Matrix() {}
+Matrix::Matrix() 
+{
+	mat = NULL;
+}
 
 Matrix::Matrix(int _a, int _b)		//Create a matrix with size a * b and fitted with 0s
 {
@@ -111,6 +115,29 @@ Matrix Matrix::operator*(double x) const
 	return res;
 }
 
+Matrix& Matrix::operator=(Matrix m)
+{
+	if (mat != NULL)
+	{
+		for (int i = 0; i < a; i++)
+		{
+			delete[] mat[i];
+			mat[i] = NULL;
+		}
+		delete[] mat;
+		mat = NULL;
+	}
+	a = m.a; b = m.b;
+	mat = new double*[a];
+	for (int i = 0; i < a; i++)
+	{
+		mat[i] = new double[b];
+		for (int j = 0; j < b; j++)
+			mat[i][j] = m[i][j];
+	}
+	return *this;
+}
+
 Matrix Matrix::trans()		//Transpose
 {
 	Matrix res(b, a);
@@ -153,4 +180,15 @@ void Matrix::print()
 
 Matrix::~Matrix()
 {
+	if (mat != NULL)
+	{
+		for (int i = 0; i < a; i++)
+		{
+			delete[] mat[i];
+			mat[i] = NULL;
+		}
+		delete[] mat;
+		mat = NULL;
+	}
+	mat = NULL;
 }

@@ -10,8 +10,9 @@ public:
 	int skill_factor, length;
 
 	Individual() {};
-	//Individual(const Individual&);
 	Individual(int, int);
+	Individual(const Individual& I);
+	Individual& operator=(Individual);
 	void Update_Cost(Problem**, int);
 	void Init();
 	void Int_Init();

@@ -76,31 +76,67 @@ bool Config()
 	problem_set = new Problem*[num_pro];
 	DATAPATH = DATAPATH.substr(pos + 1, DATAPATH.size() - pos - 1);
 	DATAPATH += " ";
-	string path = ""; double** map; int len, index = 0;
+	string path = ""; double*** map; int len, index = 0, cur = 0;
 	for (int i = 0; i < DATAPATH.size(); i++)
 	{
 		if (DATAPATH[i] == ' ')
 		{
 			if (path.size() < 1)
 				continue;
+			//if (PROBLEM == "TSP")
+			//{
+			//	map = Read_TSP((char*)path.c_str(), len);
+			//	Matrix M(map, len + 1, len + 1);
+			//	tsp[index].Init(len, M);
+			//	problem_set[index] = &tsp[index];
+			//	dim = max(dim, len);
+			//}
+			//else
+			//{
+			//	int track; double capacity;
+			//	map = Read_CVRP((char*)path.c_str(), len, track, capacity);
+			//	Matrix M(map, len, len);
+			//	cvrp[index].Init(len - 1, M, map[len], track, capacity);
+			//	problem_set[index] = &cvrp[index];
+			//	dim = max(dim, len - 1);
+			//}
 			if (PROBLEM == "TSP")
 			{
-				map = Read_TSP((char*)path.c_str(), len);
-				Matrix M(map, len + 1, len + 1);
-				tsp[index].Init(len, M);
-				problem_set[index] = &tsp[index];
-				dim = max(dim, len);
+				int tmp = 0;
+				map = Read_TSP_batch((char*)path.c_str(), num_pro - cur, tmp);
+				for (int j = 0; j < tmp; j++)
+				{
+					if (index >= num_pro)
+						break;
+					len = map[j][0][0];
+					map[j][0][0] = 0;
+					Matrix M(map[j], len + 1, len + 1);
+					tsp[index].Init(len, M);
+					problem_set[index] = &tsp[index];
+					dim = max(dim, len);
+					index++;
+				}
+				cur += tmp;
 			}
 			else
 			{
-				int track; double capacity;
-				map = Read_CVRP((char*)path.c_str(), len, track, capacity);
-				Matrix M(map, len, len);
-				cvrp[index].Init(len - 1, M, map[len], track, capacity);
-				problem_set[index] = &cvrp[index];
-				dim = max(dim, len - 1);
+				int truck, tmp; double capacity;
+				map = Read_CVRP_batch((char*)path.c_str(), num_pro - cur, tmp);
+				for (int j = 0; j < tmp; j++)
+				{
+					if (index >= num_pro)
+						break;
+					len = map[j][0][0]; truck = map[j][1][1]; capacity = map[j][2][2];
+					map[j][0][0] = map[j][1][1] = map[j][2][2] = 0;
+					Matrix M(map[j], len, len);
+					cvrp[index].Init(len - 1, M, map[j][len], truck, capacity);
+					problem_set[index] = &cvrp[index];
+					dim = max(dim, len - 1);
+					index++;
+				}
+				cur += tmp;
 			}
-			index++;
+			
 			path = "";
 		}
 		else
@@ -112,7 +148,8 @@ bool Config()
 int main()
 {
 	srand((unsigned)time(0));
-	
+	//double*** res;
+	//res = Read_CVRP_batch((char*)"test.dat", 10);
 	if (!Config())
 	{
 		printf("Configuration error.\n");
@@ -138,21 +175,19 @@ int main()
 		epoch++;
 		population.getOffspring(problem_set);
 		population.Select();
-		for (int i = 0; i < num_pro; i++)
-		{
-			population.Get_Best(i).Print_Solution(problem_set[i]->dim);
-			printf("%lf\n", problem_set[i]->solve(population.Get_Best(i).gene));
-		}
-		printf("\n");
+		//for (int i = 0; i < num_pro; i++)
+		//{
+		//	population.Get_Best(i).Print_Solution(problem_set[i]->dim);
+		//	printf("%lf\n", problem_set[i]->solve(population.Get_Best(i).gene));
+		//}
+		//printf("\n");
 
 	}
-		
-	//for (int i = 0; i < num_pro; i++)
-	//{
-	//	population.Get_Best(i).Print_Solution(problem_set[i]->dim);
-	//	printf("%lf\n", problem_set[i]->solve(population.Get_Best(i).gene));
-	//}
-	//printf("\n");
+	for (int i = 0; i < num_pro; i++)
+	{
+		population.Get_Best(i).Print_Solution(problem_set[i]->dim);
+		printf("%lf\n", problem_set[i]->solve(population.Get_Best(i).gene));
+	}
 
 }
 
