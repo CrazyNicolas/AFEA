@@ -2,4 +2,4 @@ Population size per problem=20
 Crossover rate=0.5
 Iteration=1000
 Problem=TSP
-Data path=../../data/EA_data.dat
+Data path=../../data/reward_MFEA_data.dat

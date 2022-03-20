@@ -4,8 +4,6 @@
 #include "Rastrigin.h"
 #include "Sphere.h"
 #include <algorithm>
-#include <stdlib.h>
-#include <stdio.h>
 #include <cmath>
 #include <time.h>
 using namespace std;

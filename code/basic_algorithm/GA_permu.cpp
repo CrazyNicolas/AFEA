@@ -6,14 +6,14 @@
 #include "../IOtool/IOtool.h"
 
 using namespace std;
-const int N = 300, LENGTH = 260;
-int n, len, Epoch = 10000;
+const int N = 300, LENGTH = 130;
+int n, len, Epoch = 2500, P, p;
 double Pm = 0.06, alpha = 1.0;
-double** Map;
+double*** Map;
 
 double Distance(int a, int b)
 {
-	return Map[a][b];
+	return Map[p][a][b];
 }
 
 class INDIV
@@ -42,14 +42,13 @@ public:
 	{
 		for (int i = 0; i < length; i++)
 			printf("%d ", gene[i]);
-		printf("\n");
 	}
 	double evaluation()
 	{
 		double res = 0;
 		for (int i = 0; i < length; i++)
 		{
-			res += Map[gene[i]][gene[(i + 1) % length]];
+			res += Map[p][gene[i]][gene[(i + 1) % length]];
 		}
 		return res;
 	}
@@ -60,12 +59,14 @@ public:
 			b = rand() % length;
 		swap(gene[a], gene[b]);
 	}
-	bool operator < (INDIV x)
-	{
-		return evaluation() < x.evaluation();
-	}
+
 };
 INDIV population[N];
+
+bool cmp(INDIV &a, INDIV &b)
+{
+    return a.evaluation() < b.evaluation();
+}
 
 void PMX(INDIV Pa, INDIV Pb, INDIV& Ca, INDIV& Cb)
 {
@@ -169,9 +170,27 @@ void getOffspring()
 	delete[] candidate;
 }
 
-int main()
+void select()
 {
-	Map = Read_TSP((char*)"TSP16i.txt", len);
+    sort(population, population + n * 2, cmp);
+    /*
+    int index = 1, s = n - index;
+	while (index < n)
+	{
+		int x = rand() % s + index, y = rand() % s + index;
+		if (population[x].evaluation() > population[y].evaluation())
+			swap(population[index++], population[x]);
+		else
+			swap(population[index++], population[y]);
+	}
+	*/
+}
+
+int main(int argc, char* argv[])
+{
+    P = atoi(argv[2]);
+    char* path = argv[1];
+	Map = Read_TSP_batch(path, P);
 	//for (int i = 1; i <= len; i++)
 	//{
 	//	for (int j = 1; j <= len; j++)
@@ -179,20 +198,22 @@ int main()
 	//	printf("\n");
 	//}
 	srand(unsigned(time(0)));
-	n = 100;// len = 30;
-	for (int i = 0; i < n; i++)
-	{
-		population[i].Init();
+	for(p = 0; p < P; p++)
+    {
+        n = 100;
+        len = Map[p][0][0];
+        for (int i = 0; i < n; i++)
+        {
+            population[i].Init();
+        }
+        int epoch = 0;
+        while (epoch < Epoch)
+        {
+            epoch++;
+            getOffspring();
+            select();
+        }
+        population[0].print();
+        printf("%lf\n", population[0].evaluation());
 	}
-	int epoch = 0;
-	while (epoch < Epoch)
-	{
-		epoch++;
-		getOffspring();
-		sort(population, population + n * 2);
-		printf("%lf\n\n", population[0].evaluation());
-		printf("\n\n");
-	}
-	population[0].print();
-	printf("%lf\n", population[0].evaluation());
 }

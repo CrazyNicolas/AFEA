@@ -317,7 +317,7 @@ int main(){
 	}
 
 	//start iterating process
-	unsigned int epoch = 50000;
+	unsigned int epoch = 500;
 	time_t start = clock(); //calculating time
 	while(--epoch){
 		// firstly, generate all neccessary rvs for crossover

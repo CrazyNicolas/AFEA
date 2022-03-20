@@ -1,7 +1,7 @@
 #include "Matrix.h"
 #include <cstring>
 #include <algorithm>
-#include <stdio.h>
+#include <Windows.h>
 #include <cmath>
 #include <time.h>
 using namespace std;

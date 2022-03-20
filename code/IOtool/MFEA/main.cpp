@@ -8,16 +8,15 @@
 #include "TSP.h"
 #include "CVRP.h"
 #include "Problem.h"
+#include <Windows.h>
 #include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <cmath>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string>
 #include <time.h>
-#include <unistd.h>
-#include "IOtool.h"
+#include "../IOtool/IOtool.h"
 using namespace std;
 #pragma warning(disable : 4996)
 
@@ -120,16 +119,11 @@ int main(int argc, char* argv[])
 	//num_pro = 32;
 	srand((unsigned)time(0));
 	char exeFullPath[256]; // Full path
-	int cnt = readlink("/proc/self/exe", exeFullPath, 256);
-	for (int i = cnt; i >=0; --i)
-	{
-	    if (exeFullPath[i] == '/')
-	    {
-		exeFullPath[i+1] = '\0';
-		break;
-	    }
-	}
-	exePath = exeFullPath;
+	GetModuleFileNameA(NULL, exeFullPath, 256);
+	exePath = (string)exeFullPath;    // Get full path of the file
+	int ppp = exePath.find_last_of('\\', exePath.length());
+	exePath = exePath.substr(0, ppp);
+	exePath += "\\";
 	//exePath = "";
 	if (!Config())
 	{

@@ -1,0 +1,6 @@
+Population size=200
+Crossover rate=0.5
+Iteration=1000
+Problem=CVRP
+Instacne number=10
+Data path=test.dat
